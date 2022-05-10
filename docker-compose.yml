@@ -1,0 +1,14 @@
+version: 3.8
+services:
+  worker:
+    build: .
+    environment:
+      DB_URI: mongo://db/userdata
+  db:
+    image: mongo:latest
+    ports:
+      - 27017:27017
+    volumes:
+      - vindly:data/db
+  volumes:
+    vindly:

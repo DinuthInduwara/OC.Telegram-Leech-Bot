@@ -1,0 +1,13 @@
+Bot_Client/plugins/requirements
+bot.session
+Bot_Client/plugins/__pycache__
+Bot_Client/__pycache__
+downloads
+.env
+.conf
+.__pycache__
+__pycache__
+.session
+.session-journal
+storage
+bot.session-journal
