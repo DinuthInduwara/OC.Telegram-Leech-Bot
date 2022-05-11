@@ -49,3 +49,13 @@
 
 
 
+import os 
+
+
+x = [i for i in range(1, 100)]
+
+output = []
+for i in range(0 , len(x), 10):
+    l = x[i: i+10]
+    output.append(l)
+print(output)

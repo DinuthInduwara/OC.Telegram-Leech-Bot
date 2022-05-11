@@ -101,7 +101,7 @@ async def gen_link(url, imp=None):
     
     # google drive
     elif "drive.google.com" in url:
-        API_KEY= 'AIzaSyCgLwZyQowbFOlvQ1YDt0F6DdQdyiXQ8Lg'
+        API_KEY= 'AIzaSyBrdByXazx98BJTG3g7CPdIY8ajUb5WoOM'
         SPLITID =  url.split("/")
         FILEID =(SPLITID[5])
         DIRECT = (f"https://www.googleapis.com/drive/v3/files/{FILEID}?alt=media&key={API_KEY}")

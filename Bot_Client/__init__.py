@@ -1,5 +1,5 @@
 import pyrogram
-import pymongo, os
+import pymongo, os, json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,7 +10,7 @@ class config(object):
         TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", '')
         TG_API_ID = os.environ.get("TG_API_ID", 12345)
         TG_API_HASH = os.environ.get("TG_API_HASH", '')
-        SUDO_USERS = list(os.environ.get("SUDO_USERS", ''))
+        SUDO_USERS = json.loads(os.environ.get("SUDO_USERS", ''))
 
 
 

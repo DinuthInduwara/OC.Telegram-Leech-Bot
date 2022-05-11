@@ -5,14 +5,17 @@ from Bot_Client.plugins.constents.progress_for_pyrogram import progress_for_pyro
 
 async def get_type(path):
     kind = mimetypes.guess_type(path)
-    if 'image' in kind[0]:
-        return "photo"
-    elif "audio" in kind[0]:
-        return "audio"
-    elif "video" in kind[0]:
-        return "video"
-    else:
-        return "document"
+    print(kind)
+    if kind and kind[0]:
+        if 'image' in kind[0]:
+            return "photo"
+        elif "audio" in kind[0]:
+            return "audio"
+        elif "video" in kind[0]:
+            return "video"
+        else:
+            return "document"
+    else: return "document"
 
 
 

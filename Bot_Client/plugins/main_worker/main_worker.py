@@ -19,9 +19,11 @@ class main_worker:
 
     async def uploadTelegram(self, message, path):
         await upload_tg(message, path)
-        try:await self.generate_screen_shots_and_send(message, path)
+        try:
+            await self.generate_screen_shots_and_send(message, path)
+            os.remove(path)
         except:pass
-        finally:os.remove(path)
+
 
     async def generate_screen_shots_and_send(self, message, path, ss_count=6):
         metadata = extractMetadata(createParser(path))
@@ -44,7 +46,9 @@ class main_worker:
         await rclone_Upload(path, message, dest_drive)
         try:await self.generate_screen_shots_and_send(message, path)
         except:pass
-        finally:os.remove(path)
+        finally: 
+            if path:
+                os.remove(path)
     
     async def parse_rclone_config(self, path):
         with open(path, 'r') as f:
@@ -56,6 +60,20 @@ class main_worker:
         inline_keyboard = [[InlineKeyboardButton(n, callback_data=f"D_{i}_{message.reply_to_message_id}")] for i, n in enumerate(configpath)]
         await message.edit("Select Rclone Configuration", reply_markup=InlineKeyboardMarkup(inline_keyboard))
 
-
-
+    async def list_files_and_folders(self, path):
+        folders = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
+        files = [d for d in os.listdir(path) if os.path.isfile(os.path.join(path, d))]
+        return{"files": files, "folders": folders}
+    
+    async def list_splitter(self, list_, spliting_count) -> list:
+        output = []
+        for i in range(0 , len(list_), spliting_count):
+            l = list_[i: i+spliting_count]
+            output.append(l)
+        return output
+            
+        
+        
+        
+        
 MAIN_WORKER = main_worker()

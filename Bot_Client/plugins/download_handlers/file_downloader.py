@@ -1,6 +1,6 @@
 # import sys
 import requests
-import time
+import time, os
 import mimetypes
 from Bot_Client.plugins.constents.progress_for_pyrogram import progress_for_pyrogram
 
@@ -8,6 +8,9 @@ def filenamegen(url, content_type):
     filename = url.split("/")[-1].replace('%', ' ').strip()
     if filename == "":
         filename = url.split("/")[-2].replace('%', ' ').strip()
+    if '.' in filename:
+        if "?" or '=' in filename.split(".")[-1]:
+            filename = filename+mimetypes.guess_extension(content_type)
     if '.' not in filename:
         filename = filename+mimetypes.guess_extension(content_type)
     return filename
@@ -15,10 +18,16 @@ def filenamegen(url, content_type):
 
 
 async def download(url,message,  filename=None):
+    if not os.path.isdir(f'./downloads/'):  
+        os.makedirs(f'./downloads/')
+    if not os.path.isdir(f'./downloads/{message.chat.id}/'):  
+        os.makedirs(f'./downloads/{message.chat.id}/')
+
+
     response = requests.get(url, stream=True, allow_redirects=True)
     if filename == None or "." not in filename:
         filename = filenamegen(url, response.headers.get('content-type').strip())
-    filename = './downloads/'+filename
+    filename = f'./downloads/{message.chat.id}/'+filename
     total = response.headers.get('content-length')
     curr_time = time.time()
 

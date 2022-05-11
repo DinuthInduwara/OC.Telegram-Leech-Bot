@@ -68,7 +68,7 @@ async def rclone_process_display(process, message, path, destfolder, confif_path
             if sleeps:
                 sleeps = False
                 process.stdout.flush()
-        await message.edit("Download Complete")
+        await message.edit("Upload Complete")
     except FloodWait as e:
         await asyncio.sleep(e.value)
     except Exception as e:
