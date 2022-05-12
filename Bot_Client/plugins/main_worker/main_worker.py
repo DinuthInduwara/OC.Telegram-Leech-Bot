@@ -29,7 +29,7 @@ class main_worker:
                 if await get_type(i) == "video":
                     paths.remove(i)
                     vids_folder = await self.split_video(i)
-                    [paths(vids_folder+i) for i in os.listdir(vids_folder)]
+                    [paths.append(vids_folder+i) for i in os.listdir(vids_folder)]
 
 
         for i in paths:
