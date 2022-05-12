@@ -1,8 +1,8 @@
-import re, os
+import re, os, shutil
 from Bot_Client import UploadCLI
 from Bot_Client.plugins.download_handlers.direct_linkGeneratr import gen_link
 from Bot_Client.plugins.download_handlers.file_downloader import download
-from Bot_Client.plugins.upload_handlers.telegram_uploder import upload_tg
+from Bot_Client.plugins.upload_handlers.telegram_uploder import upload_tg, get_type
 from Bot_Client.plugins.upload_handlers.rclone_upload import rclone_Upload
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 import Bot_Client.plugins.video_processing.ffmpeg_handler as video_processing
@@ -18,11 +18,22 @@ class main_worker:
         return await download(url, message, filename)
 
     async def uploadTelegram(self, message, path):
-        await upload_tg(message, path)
-        try:
-            await self.generate_screen_shots_and_send(message, path)
-            os.remove(path)
-        except:pass
+        if os.path.getsize(path) > 1900000000:
+            if await get_type(path) == "video":
+                nfolder = self.split_video(path)
+                for i in os.listdir(nfolder):
+                    await upload_tg(message, nfolder+'/'+i)
+                shutil.rmtree(nfolder)
+            else: 
+                await message.reply("This File Is Too Larg More Than Telegram Limit")
+                return
+
+        else:
+            await upload_tg(message, path)
+            try:
+                await self.generate_screen_shots_and_send(message, path)
+                os.remove(path)
+            except:pass
 
 
     async def generate_screen_shots_and_send(self, message, path, ss_count=6):
@@ -72,7 +83,8 @@ class main_worker:
             output.append(l)
         return output
             
-        
+    async def split_video(self, path, max_size=1900000000):
+        return await video_processing.split_file(path, max_size)
         
         
         

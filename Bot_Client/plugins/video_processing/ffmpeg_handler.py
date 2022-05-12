@@ -1,7 +1,6 @@
 
 import asyncio
 import os
-import time
 import math
 import secrets
 from hachoir.metadata import extractMetadata
@@ -41,39 +40,6 @@ async def take_screen_shot(video_file, output_directory, ttl):
 
 # https://github.com/Nekmo/telegram-upload/blob/master/telegram_upload/video.py#L26
 
-async def cult_small_video(video_file, output_directory, start_time, end_time):
-    # https://stackoverflow.com/a/13891070/4723940
-    out_put_file_name = output_directory + \
-        "/" + str(round(time.time())) + ".mp4"
-    file_genertor_command = [
-        "ffmpeg",
-        "-i",
-        video_file,
-        "-ss",
-        start_time,
-        "-to",
-        end_time,
-        "-async",
-        "1",
-        "-strict",
-        "-2",
-        out_put_file_name
-    ]
-    process = await asyncio.create_subprocess_exec(
-        *file_genertor_command,
-        # stdout must a pipe to be accessible as process.stdout
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    # Wait for the subprocess to finish
-    stdout, stderr = await process.communicate()
-    e_response = stderr.decode().strip()
-    t_response = stdout.decode().strip()
-    if os.path.lexists(out_put_file_name):
-        return out_put_file_name
-    else:
-        return None
-
 
 async def generate_screen_shots(
     video_file,
@@ -101,6 +67,39 @@ async def generate_screen_shots(
         return None
 
 
+
+
+async def cult_small_video(video_file, out_put_file_name, start_time, end_time):
+    file_genertor_command = [
+        "ffmpeg",
+        "-hide_banner",
+        "-i",
+        video_file,
+        "-ss",
+        start_time,
+        "-to",
+        end_time,
+        "-async",
+        "1",
+        "-strict",
+        "-2",
+        "-c",
+        "copy",
+        out_put_file_name,
+    ]
+    process = await asyncio.create_subprocess_exec(
+        *file_genertor_command,
+        # stdout must a pipe to be accessible as process.stdout
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    # Wait for the subprocess to finish
+    stdout, stderr = await process.communicate()
+    stderr.decode().strip()
+    stdout.decode().strip()
+    return out_put_file_name
+
+
 async def split_file(path, max_size=1800000000, force_docs=False):
 
     metadata = extractMetadata(createParser(path))
@@ -117,7 +116,7 @@ async def split_file(path, max_size=1800000000, force_docs=False):
     ftype = mime.split("/")[0]
     ftype = ftype.lower().strip()
 
-    split_dir = os.path.join(os.path.dirname(path), str(time.time()))
+    split_dir = os.path.join(os.path.dirname(path), secrets.token_hex(nbytes=10).replace('.', '_'))
 
     if not os.path.isdir(split_dir):
         os.makedirs(split_dir)
@@ -173,3 +172,6 @@ async def split_file(path, max_size=1800000000, force_docs=False):
                 break
 
     return split_dir
+
+
+
