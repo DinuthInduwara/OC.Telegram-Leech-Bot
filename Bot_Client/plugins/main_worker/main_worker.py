@@ -20,7 +20,7 @@ class main_worker:
     async def uploadTelegram(self, message, path):
         if os.path.getsize(path) > 1900000000:
             if await get_type(path) == "video":
-                nfolder = self.split_video(path)
+                nfolder = await self.split_video(path)
                 for i in os.listdir(nfolder):
                     await upload_tg(message, nfolder+'/'+i)
                 shutil.rmtree(nfolder)
