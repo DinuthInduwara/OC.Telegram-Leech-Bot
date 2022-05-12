@@ -171,7 +171,7 @@ async def split_file(path, max_size=1800000000, force_docs=False):
             elif flag:
                 break
 
-    return split_dir
+    return split_dir+'/'
 
 
 

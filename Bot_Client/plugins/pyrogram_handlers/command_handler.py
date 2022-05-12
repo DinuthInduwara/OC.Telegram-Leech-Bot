@@ -1,5 +1,5 @@
 from Bot_Client import UploadCLI, config
-import os
+import os, subprocess
 from pyrogram.filters import video, video_note, audio, photo, document, command, animation, sticker, media, regex
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -70,5 +70,31 @@ async def filemanager_cmd(client, message, before=False):
             await message.reply("Your File Manager..\n\n🌷 𝒟𝑒𝓋𝑒𝓁𝑜𝓅𝑒𝓇 : ✍️✍️𝓞𝓹𝓮𝓷 𝓒𝓸𝓭𝓮 𝓓𝓮𝓿𝓼 ✍️✍️", reply_markup=InlineKeyboardMarkup(paths))
 
 
+
+@UploadCLI.on_message(command(["shell"]))
+async def shell_cmd(client, message):
+    cmd = message.text.split(' ', 1)
+    if len(cmd) == 1:
+        await message.reply_text('No command to execute was given.')
+        return
+    cmd = cmd[1]
+    process = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    stdout, stderr = process.communicate()
+    reply = ''
+    stderr = stderr.decode()
+    stdout = stdout.decode()
+    if stdout:
+        reply += f"*Stdout*\n`{stdout}`\n"
+    if stderr:
+        reply += f"*Stderr*\n`{stderr}`\n"
+    if len(reply) > 3000:
+        doc = 'Bot_Client/plugins/requirements/shell_output.txt'
+        with open(doc, 'w') as file:
+            file.write(reply)
+        await message.reply_document(doc)
+    else:
+        if len(reply) > 1:
+            await message.reply(reply)
 
 

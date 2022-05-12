@@ -24,17 +24,15 @@ async def get_type(path):
 async def upload_tg(message, path):
     tg_upload_type = await get_type(path)
     start_time = time.time()
-
     try:
         if tg_upload_type == "photo":
-            await UploadCLI.send_photo(message.chat.id, photo=path, caption=os.path.basename(path), progress=progress_for_pyrogram, progress_args=("Now Uploading..", message, start_time))
+            await UploadCLI.send_photo(message.chat.id, photo=path, caption=os.path.basename(path), progress=progress_for_pyrogram, progress_args=(f"Now Uploading `{os.path.basename(path)}`", message, start_time))
         elif tg_upload_type == "audio":
-            await UploadCLI.send_audio(message.chat.id, audio=path, title=os.path.basename(path), progress=progress_for_pyrogram, progress_args=("Now Uploading..", message, start_time))
+            await UploadCLI.send_audio(message.chat.id, audio=path, title=os.path.basename(path), progress=progress_for_pyrogram, progress_args=(f"Now Uploading `{os.path.basename(path)}`", message, start_time))
         elif tg_upload_type == "video":
-            await UploadCLI.send_video(message.chat.id, video=path, file_name=os.path.basename(path), progress=progress_for_pyrogram, progress_args=("Now Uploading..", message, start_time))
+            await UploadCLI.send_video(message.chat.id, video=path, file_name=os.path.basename(path), progress=progress_for_pyrogram, progress_args=(f"Now Uploading `{os.path.basename(path)}`", message, start_time))
         elif tg_upload_type == "document":
-            await UploadCLI.send_document(message.chat.id, document=path, file_name=os.path.basename(path), progress=progress_for_pyrogram, progress_args=("Now Uploading..", message, start_time))
-        await message.delete()
+            await UploadCLI.send_document(message.chat.id, document=path, file_name=os.path.basename(path), progress=progress_for_pyrogram, progress_args=(f"Now Uploading `{os.path.basename(path)}`", message, start_time))
     except Exception as e:
         await message.edit(e)
     

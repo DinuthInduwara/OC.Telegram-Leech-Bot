@@ -18,22 +18,64 @@ class main_worker:
         return await download(url, message, filename)
 
     async def uploadTelegram(self, message, path):
-        if os.path.getsize(path) > 1900000000:
-            if await get_type(path) == "video":
-                nfolder = await self.split_video(path)
-                for i in os.listdir(nfolder):
-                    await upload_tg(message, nfolder+'/'+i)
-                shutil.rmtree(nfolder)
-            else: 
-                await message.reply("This File Is Too Larg More Than Telegram Limit")
-                return
+        paths = []
+        if type(path) == str:
+            paths.append(path)
+        if type[path] == list:
+            paths = path
 
-        else:
-            await upload_tg(message, path)
+        for i in paths:
+            if os.path.getsize(i) > 1900000000:
+                if await get_type(i) == "video":
+                    paths.remove(i)
+                    vids_folder = await self.split_video(i)
+                    [paths(vids_folder+i) for i in os.listdir(vids_folder)]
+
+
+        for i in paths:
             try:
-                await self.generate_screen_shots_and_send(message, path)
-                os.remove(path)
-            except:pass
+                await upload_tg(message, i)
+                os.remove(i)
+                try:
+                    await self.generate_screen_shots_and_send(message, path)
+                except Exception as e:
+                    print(e)
+            except Exception as e:
+                await message.reply(f"`{i}` file cant upload becouse: {e}")
+        await message.delete()
+
+
+
+
+
+        
+
+
+
+            
+        #         nfolder = await self.split_video(path)
+        #         os.chdir(path)
+        #         for i in os.listdir():
+        #             await upload_tg(message, i)
+        #         await message.delete()
+        #         shutil.rmtree(nfolder+'/')
+        #     else:
+        #         try:
+        #             await upload_tg(message, path)
+        #             await message.delete()
+        #             os.remove(path)
+        #         except:
+        #             await message.edit("This File Is Too Larg More Than Telegram Limit")
+        #             os.remove(path)
+        #         return
+
+        # else:
+        #     await upload_tg(message, path)
+        #     await message.delete()
+        # try:
+        #     await self.generate_screen_shots_and_send(message, path)
+        #     os.remove(path)
+        # except:pass
 
 
     async def generate_screen_shots_and_send(self, message, path, ss_count=6):
