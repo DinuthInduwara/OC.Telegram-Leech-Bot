@@ -30,7 +30,7 @@ async def upload_tg(message, path):
         elif tg_upload_type == "audio":
             await UploadCLI.send_audio(message.chat.id, audio=path, title=os.path.basename(path), progress=progress_for_pyrogram, progress_args=(f"Now Uploading `{os.path.basename(path)}`", message, start_time))
         elif tg_upload_type == "video":
-            await UploadCLI.send_video(message.chat.id, video=path, file_name=os.path.basename(path), progress=progress_for_pyrogram, progress_args=(f"Now Uploading `{os.path.basename(path)}`", message, start_time))
+            await UploadCLI.send_video(message.chat.id, video=path, caption=os.path.basename(path) ,file_name=os.path.basename(path), progress=progress_for_pyrogram, progress_args=(f"Now Uploading `{os.path.basename(path)}`", message, start_time))
         elif tg_upload_type == "document":
             await UploadCLI.send_document(message.chat.id, document=path, file_name=os.path.basename(path), progress=progress_for_pyrogram, progress_args=(f"Now Uploading `{os.path.basename(path)}`", message, start_time))
     except Exception as e:

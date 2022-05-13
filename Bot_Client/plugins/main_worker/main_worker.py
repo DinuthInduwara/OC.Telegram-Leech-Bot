@@ -37,7 +37,7 @@ class main_worker:
                 await upload_tg(message, i)
                 os.remove(i)
                 try:
-                    await self.generate_screen_shots_and_send(message, path)
+                    await self.generate_screen_shots_and_send(message, i)
                 except Exception as e:
                     print(e)
             except Exception as e:

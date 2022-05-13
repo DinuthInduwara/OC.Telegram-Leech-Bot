@@ -1,5 +1,5 @@
 import pyrogram
-import pymongo, os, json
+import os, json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,8 +14,7 @@ class config(object):
 
 
 
-MONGO_DB = config.MONGODB_URI
-DBCLIENT = pymongo.MongoClient(MONGO_DB)
+
 plugins = dict(
         root="Bot_Client/plugins"
 )

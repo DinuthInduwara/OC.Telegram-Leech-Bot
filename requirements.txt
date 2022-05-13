@@ -2,8 +2,6 @@ beautifulsoup4
 tgcrypto
 pyrogram
 requests
-pymongo[srv]
-pySmartDL
 python-dotenv
 seedir
 hachoir

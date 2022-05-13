@@ -120,7 +120,8 @@ async def answer(client, update):
         if path:
             if os.path.isdir(path):
                 x = sd.seedir(path, style='emoji', printout=False)
-                await update.message.edit(update.message.text+'\n\n'+x, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Back to Main Directory", callback_data='fmanager_back')]]))
+                if x:
+                    await update.message.edit(update.message.text+'\n\n'+x, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Back to Main Directory", callback_data='fmanager_back')]]))
 
 
 
