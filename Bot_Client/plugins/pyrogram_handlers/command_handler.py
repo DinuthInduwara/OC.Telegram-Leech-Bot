@@ -98,3 +98,20 @@ async def shell_cmd(client, message):
             await message.reply(reply)
 
 
+
+@UploadCLI.on_message(command(["ytdl"]))
+async def ytdl_cmd(client, message):
+    if len(message.command) > 1:
+        message = message.text.strip("/ytdl ")
+        url, name = message.command[1], None
+        if "|" in message.text:
+            x = message.text.split("|")[-1]
+            if x.strip():
+                name = x
+        
+
+
+
+
+
+

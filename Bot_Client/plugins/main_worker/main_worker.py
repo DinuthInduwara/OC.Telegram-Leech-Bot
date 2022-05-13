@@ -128,6 +128,7 @@ class main_worker:
     async def split_video(self, path, max_size=1900000000):
         return await video_processing.split_file(path, max_size)
         
-        
+    async def ytdl_download(self, url, path):
+        pass
         
 MAIN_WORKER = main_worker()
