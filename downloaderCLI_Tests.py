@@ -4,15 +4,18 @@ import mimetypes
 import math
 import sys
 import time
-import threading
+from threading import Thread
 
-class Filedownloade:
-    def __init__(self):
+class Filedownloade(Thread):
+    def __init__(self, url, file_name=None, display_progress=True):
+        super(Filedownloade, self).__init__()
+        self.url = url
+        self.display_progress = display_progress
         self.Ifstopped = False
         self.downloading_speed = 0
-        self.progress_bar = True
+        self.progress_bar = display_progress
         self.elapsed_time = 0
-        self.file_name = None
+        self.file_name = file_name
         self.session = requests.Session()
         self.file_size = 0
         self._contents = None
@@ -22,7 +25,7 @@ class Filedownloade:
         self.presentage = 0
         self.bar = "[]"
         self.estimated_total_time = 0
-    
+
     def _request(self, url):
         res = self.session.get(url, stream=True, allow_redirects=True)
         self._contents = res
@@ -30,11 +33,9 @@ class Filedownloade:
         self.file_size = int(res.headers.get('content-length'))
         self.file_name = self.gen_fileDownloadPath(url)
 
-    def downloader(self, url, filename=None, display_progress=True, block=True):
-        if not block:
-            t1 = threading.Thread(target=self._worker_download, args=(url, filename, display_progress))
-            return t1
-        else: return self._worker_download(url, filename, display_progress)
+    def run(self):
+        return self._worker_download(self.url, self.file_name, self.progress_bar)
+
     
     def _worker_download(self, url, filename=None, display_progress=True):
         if not self._contents:
@@ -129,13 +130,5 @@ class Filedownloade:
         return tmp[:-2]
 
 
-# obj = Filedownloade()
-# X = obj.start()
-# while obj:
-#     print(x.bar)
 
-
-
-# url = "https://sample.mgstage.com/sample/prestige/yrh/295/yrh-295_20211018T155302.mp4"
-# x = obj.downloader(url, display_progress=True, block=True)
-# print(x)
+FiledownloaderCLI = Filedownloade()
