@@ -11,9 +11,10 @@ async def answer(client, update):
     # await update.answer(
     #     f"Button contains: '{update.data}'",
     #     show_alert=True)
+    if update.data == "stop_download":
+        await update.message.edit("Stopping download Progress")
 
-
-    if 'deletemsg' == update.data:
+    elif 'deletemsg' == update.data:
         await update.message.delete()
         return
 
@@ -28,7 +29,8 @@ async def answer(client, update):
         print(url)
         await update.answer(f"The file has started downloading..", show_alert=True)
         path = await MAIN_WORKER.download_file(update.message, url, fname)
-        await MAIN_WORKER.uploadTelegram(update.message, path)
+        if path:
+            await MAIN_WORKER.uploadTelegram(update.message, path)
         return
 
     elif 'rcloneupload' == update.data:
@@ -56,8 +58,9 @@ async def answer(client, update):
             await update.answer(f"The file has started downloading..", show_alert=True)
             path = await MAIN_WORKER.download_file(update.message, url, fname)
             print(path)
-            config_paths = await MAIN_WORKER.parse_rclone_config(f"./Bot_Client/plugins/requirements/{update.message.chat.id}/rclone.conf")
-            await MAIN_WORKER.uploadRclone(update.message, path, config_paths[int(update.data.split('_')[1])])
+            if path:
+                config_paths = await MAIN_WORKER.parse_rclone_config(f"./Bot_Client/plugins/requirements/{update.message.chat.id}/rclone.conf")
+                await MAIN_WORKER.uploadRclone(update.message, path, config_paths[int(update.data.split('_')[1])])
         return
     
     elif update.data in ['tmp.ninja', 'mixdrop', 'gofile', 'bayfiles', 'transfersh', 'anonfiles']:

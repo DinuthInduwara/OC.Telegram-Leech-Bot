@@ -1,13 +1,15 @@
-import re, os, shutil
+import re, os, time
 from Bot_Client import UploadCLI
+from hachoir.metadata import extractMetadata
+from hachoir.parser import createParser
+from Bot_Client.plugins.download_handlers.downloader import Filedownloade 
 from Bot_Client.plugins.download_handlers.direct_linkGeneratr import gen_link
 from Bot_Client.plugins.download_handlers.file_downloader import download
 from Bot_Client.plugins.upload_handlers.telegram_uploder import upload_tg, get_type
 from Bot_Client.plugins.upload_handlers.rclone_upload import rclone_Upload
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 import Bot_Client.plugins.video_processing.ffmpeg_handler as video_processing
-from hachoir.metadata import extractMetadata
-from hachoir.parser import createParser
+
 
 
 class main_worker:
@@ -15,7 +17,24 @@ class main_worker:
         return await gen_link(link, dtype)
 
     async def download_file(self, message,  url,  filename=None):
-        return await download(url, message, filename)
+        downloadCLI = Filedownloade(url, filename, display_progress=False)
+        downloadCLI.start()
+        while downloadCLI.is_alive():
+            time.sleep(4)
+            msg = await UploadCLI.get_messages(message.chat.id, message.message_id)
+            if msg.text == "Stopping download Progress":
+                downloadCLI.kill_thread()
+                return None
+            print(downloadCLI.is_alive())
+            try: await msg.edit_text(downloadCLI.bar)
+            except Exception as e:print(e)
+        return downloadCLI.file_name
+        
+        
+
+
+
+        # return await download(url, message, filename)
 
     async def uploadTelegram(self, message, path):
         paths = []
@@ -43,40 +62,6 @@ class main_worker:
             except Exception as e:
                 await message.reply(f"`{i}` file cant upload becouse: {e}")
         await message.delete()
-
-
-
-
-
-        
-
-
-
-            
-        #         nfolder = await self.split_video(path)
-        #         os.chdir(path)
-        #         for i in os.listdir():
-        #             await upload_tg(message, i)
-        #         await message.delete()
-        #         shutil.rmtree(nfolder+'/')
-        #     else:
-        #         try:
-        #             await upload_tg(message, path)
-        #             await message.delete()
-        #             os.remove(path)
-        #         except:
-        #             await message.edit("This File Is Too Larg More Than Telegram Limit")
-        #             os.remove(path)
-        #         return
-
-        # else:
-        #     await upload_tg(message, path)
-        #     await message.delete()
-        # try:
-        #     await self.generate_screen_shots_and_send(message, path)
-        #     os.remove(path)
-        # except:pass
-
 
     async def generate_screen_shots_and_send(self, message, path, ss_count=6):
         metadata = extractMetadata(createParser(path))

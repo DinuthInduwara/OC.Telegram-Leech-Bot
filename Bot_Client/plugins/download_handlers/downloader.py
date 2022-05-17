@@ -26,6 +26,10 @@ class Filedownloade(Thread):
         self.bar = "[]"
         self.estimated_total_time = 0
 
+    def kill_thread(self):
+        self.Ifstopped = True
+
+
     def _request(self, url):
         res = self.session.get(url, stream=True, allow_redirects=True)
         self._contents = res
@@ -53,7 +57,8 @@ class Filedownloade(Thread):
                     if self.Ifstopped:
                         print("Download Progress Stopped......")
                         os.remove(filename)
-                        break
+                        raise ValueError("Stopping download")
+                        
                     self.completed_size += len(data)
                     f.write(data)
                     self.progress_generator()
@@ -68,9 +73,9 @@ class Filedownloade(Thread):
         if filename == "":
             filename = url.split("/")[-2].replace('%', ' ').strip()
         if '.' in filename:
-            if "?" or '=' in filename.split(".")[-1]:
+            if "?" or '=' in filename.split(".")[-1] and self.file_Mimetype != None:
                 filename = filename+mimetypes.guess_extension(self.file_Mimetype)
-        if '.' not in filename:
+        if '.' not in filename and self.file_Mimetype != None:
             filename = filename+mimetypes.guess_extension(self.file_Mimetype)
         return filename
 
@@ -130,5 +135,3 @@ class Filedownloade(Thread):
         return tmp[:-2]
 
 
-
-FiledownloaderCLI = Filedownloade()
