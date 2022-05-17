@@ -1,4 +1,4 @@
-import re, os, time
+import re, os, time, asyncio
 from Bot_Client import UploadCLI
 from hachoir.metadata import extractMetadata
 from hachoir.parser import createParser
@@ -11,23 +11,29 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMedi
 import Bot_Client.plugins.video_processing.ffmpeg_handler as video_processing
 
 
-
 class main_worker:
     async def generate_directLinks(self, link, dtype):
         return await gen_link(link, dtype)
 
     async def download_file(self, message,  url,  filename=None):
-        downloadCLI = Filedownloade(url, filename, display_progress=False)
+        if filename:
+            filename = os.path.join(f"downloads/{message.chat.id}/{filename}")
+        downloadCLI = Filedownloade(url,message, filename)
         downloadCLI.start()
+        x = None
         while downloadCLI.is_alive():
-            time.sleep(4)
-            msg = await UploadCLI.get_messages(message.chat.id, message.message_id)
+            print(downloadCLI.completed_size)
+            await asyncio.sleep(4)
+            msg = await UploadCLI.get_messages(message.chat.id, message.id or message.message_id)
             if msg.text == "Stopping download Progress":
-                downloadCLI.kill_thread()
-                return None
-            print(downloadCLI.is_alive())
-            try: await msg.edit_text(downloadCLI.bar)
-            except Exception as e:print(e)
+                    downloadCLI.kill_thread()
+                    os.remove(downloadCLI.file_name)
+                    return None
+            elif downloadCLI.bar != x:
+                x = downloadCLI.bar
+                print(downloadCLI.is_alive())
+                try: await msg.edit_text(downloadCLI.progress_bar, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Stop Task", callback_data="stop_download")]]))
+                except Exception as e:print(e)
         return downloadCLI.file_name
         
         
@@ -37,10 +43,12 @@ class main_worker:
         # return await download(url, message, filename)
 
     async def uploadTelegram(self, message, path):
+        if path==None:
+            return
         paths = []
         if type(path) == str:
             paths.append(path)
-        if type[path] == list:
+        if type(path) == list:
             paths = path
 
         for i in paths:
@@ -54,11 +62,12 @@ class main_worker:
         for i in paths:
             try:
                 await upload_tg(message, i)
-                os.remove(i)
+                
                 try:
                     await self.generate_screen_shots_and_send(message, i)
                 except Exception as e:
                     print(e)
+                finally:os.remove(i)
             except Exception as e:
                 await message.reply(f"`{i}` file cant upload becouse: {e}")
         await message.delete()

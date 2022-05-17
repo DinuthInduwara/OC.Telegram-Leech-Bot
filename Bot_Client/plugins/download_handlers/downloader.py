@@ -7,18 +7,17 @@ import time
 from threading import Thread
 
 class Filedownloade(Thread):
-    def __init__(self, url, file_name=None, display_progress=True):
+    def __init__(self, url, message=None, file_name=None,):
         super(Filedownloade, self).__init__()
         self.url = url
-        self.display_progress = display_progress
+        self.message = message
         self.Ifstopped = False
         self.downloading_speed = 0
-        self.progress_bar = display_progress
+        self.progress_bar = None
         self.elapsed_time = 0
         self.file_name = file_name
         self.session = requests.Session()
         self.file_size = 0
-        self._contents = None
         self.file_Mimetype = None
         self.started_time = time.time()
         self.completed_size = 0
@@ -29,46 +28,44 @@ class Filedownloade(Thread):
     def kill_thread(self):
         self.Ifstopped = True
 
-
-    def _request(self, url):
-        res = self.session.get(url, stream=True, allow_redirects=True)
-        self._contents = res
-        self.file_Mimetype = res.headers.get('content-type')
-        self.file_size = int(res.headers.get('content-length'))
-        self.file_name = self.gen_fileDownloadPath(url)
-
     def run(self):
-        return self._worker_download(self.url, self.file_name, self.progress_bar)
+        return self._worker_download(self.url, self.file_name)
 
     
-    def _worker_download(self, url, filename=None, display_progress=True):
-        if not self._contents:
-            self._request(url)
+    def _worker_download(self, url, filename=None):
+        res = self.session.get(url, stream=True, allow_redirects=True)
+        self.file_Mimetype = res.headers.get('content-type')
+        self.file_size = int(res.headers.get('content-length'))
+        if not self.file_name:self.file_name = self.gen_fileDownloadPath(url)
+        
+
+
+        
+        if not os.path.isdir(os.path.dirname(self.file_name)):
+            os.makedirs(os.path.dirname(self.file_name))
         if not filename:
-            if not os.path.isdir('./downloads/'):
-                os.makedirs('./downloads/')
             filename = self.file_name
+        
         else: self.file_name = filename 
         with open(self.file_name, 'wb') as f:
             if self.file_size is None:
-                f.write(self._contents.content)
+                f.write(res.content)
             else:
-                for data in self._contents.iter_content(chunk_size=max(int(self.file_size/1000), 1024*1024)):
+                for data in res.iter_content(chunk_size=max(int(self.file_size/1000), 1024*1024)):
                     if self.Ifstopped:
                         print("Download Progress Stopped......")
-                        os.remove(filename)
                         raise ValueError("Stopping download")
                         
                     self.completed_size += len(data)
                     f.write(data)
-                    self.progress_generator()
-                    if display_progress:
-                        self.display_progress_bar()
+                    self.bar_generator()
+                    self.progress_bar_gen()
             return filename
 
                 
 
     def gen_fileDownloadPath(self, url):
+        if self.file_name: return self.file_name
         filename = url.split("/")[-1].replace('%', ' ').strip()
         if filename == "":
             filename = url.split("/")[-2].replace('%', ' ').strip()
@@ -77,9 +74,9 @@ class Filedownloade(Thread):
                 filename = filename+mimetypes.guess_extension(self.file_Mimetype)
         if '.' not in filename and self.file_Mimetype != None:
             filename = filename+mimetypes.guess_extension(self.file_Mimetype)
-        return filename
+        return os.path.join(f"downloads/{self.message.chat.id}/{filename}")
 
-    def progress_generator(self):
+    def bar_generator(self):
         now = time.time()
         diff = now - self.started_time
         if round(diff % 10.00) == 0 or self.completed_size == self.file_size:
@@ -95,16 +92,15 @@ class Filedownloade(Thread):
                 ''.join(["░" for i in range(20 - math.floor(self.presentage / 5))]),
                 round(self.presentage, 2))
 
-    def display_progress_bar(self):
-        tmp = self.bar + "{0} of {1}\nSpeed: {2}/s\nETA: {3}\n".format(
+    def progress_bar_gen(self):
+        self.progress_bar = self.bar + "{0} of {1}\nSpeed: {2}/s\nETA: {3}\n".format(
             self.humanbytes(self.completed_size),
             self.humanbytes(self.file_size),
             self.humanbytes(self.downloading_speed),
             # elapsed_time if elapsed_time != '' else "0 s",
             self.estimated_total_time if self.estimated_total_time != '' else "0 s"
         )
-        sys.stdout.write(tmp)
-        sys.stdout.flush()
+    
 
 
 

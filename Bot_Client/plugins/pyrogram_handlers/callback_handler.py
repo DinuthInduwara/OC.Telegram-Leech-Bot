@@ -29,7 +29,7 @@ async def answer(client, update):
         print(url)
         await update.answer(f"The file has started downloading..", show_alert=True)
         path = await MAIN_WORKER.download_file(update.message, url, fname)
-        if path:
+        if path != None:
             await MAIN_WORKER.uploadTelegram(update.message, path)
         return
 
@@ -58,7 +58,7 @@ async def answer(client, update):
             await update.answer(f"The file has started downloading..", show_alert=True)
             path = await MAIN_WORKER.download_file(update.message, url, fname)
             print(path)
-            if path:
+            if path != None:
                 config_paths = await MAIN_WORKER.parse_rclone_config(f"./Bot_Client/plugins/requirements/{update.message.chat.id}/rclone.conf")
                 await MAIN_WORKER.uploadRclone(update.message, path, config_paths[int(update.data.split('_')[1])])
         return
