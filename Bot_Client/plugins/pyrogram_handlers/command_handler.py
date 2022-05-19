@@ -2,6 +2,7 @@ from Bot_Client import UploadCLI, config
 import os, subprocess
 from pyrogram.filters import video, video_note, audio, photo, document, command, animation, sticker, media, regex
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from Bot_Client.plugins.main_worker.main_worker import MAIN_WORKER
 
 
 @UploadCLI.on_message(command(["start"]))
@@ -14,7 +15,7 @@ async def help_cmd(client, message):
     msg= f"How to Use Me?\n🌷 𝒟𝑒𝓋𝑒𝓁𝑜𝓅𝑒𝓇 : ✍️✍️𝓞𝓹𝓮𝓷 𝓒𝓸𝓭𝓮 𝓓𝓮𝓿𝓼 ✍️✍️ \n\nFollow These steps!\n1. Send url (`example.domain/File.mp4` | `New Filename.mp4`).\n\nExample:\nhttps://example.zip\nExample with custom filename:\nhttps://example.zip | `my_file.zip`\n\nSupported Sites:\nhttps://telegra.ph/X-URL-Uploader-Supported-Sites-11-01\n\nIf bot didn't respond, contact @tokiyo_ew"
     await message.reply(msg, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Rclone Settings", callback_data='rclone_settings')]]))
 
-@UploadCLI.on_message(regex(r"https?://.* ?"))
+@UploadCLI.on_message(regex(r"^https?://.* ?"))
 async def filter_links(client, message):
     await message.reply("Choose ..", reply_markup=InlineKeyboardMarkup([[
             InlineKeyboardButton('Telegram Leech', callback_data='tgupload'),
@@ -98,19 +99,17 @@ async def shell_cmd(client, message):
             await message.reply(reply)
 
 
-
 @UploadCLI.on_message(command(["ytdl"]))
 async def ytdl_cmd(client, message):
-    if len(message.command) > 1:
-        message = message.text.strip("/ytdl ")
-        url, name = message.command[1], None
-        if "|" in message.text:
-            x = message.text.split("|")[-1]
-            if x.strip():
-                name = x
-        
-
-
+    msg = await message.reply("Processing Message 😁👀", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("༼ つ ◕_◕ ༽つ", url="https://t.me/+qvJ4LlkWlSs1YTI1")]]),  quote=True)
+    url , fname = await MAIN_WORKER.parse_details_from_message_text(message.text)
+    print(url, fname)
+    if url:
+        qualitys, errors = await MAIN_WORKER.create_ytdl_quality_menu(url, message, short_msg="ytdl")
+        if fname == None: fname = qualitys[1]
+        if errors: await msg.edit(f"Cant Process url becouse:{errors}")
+        else: await msg.edit(f"📁File Name: `{fname}`", reply_markup=InlineKeyboardMarkup(qualitys[0]))
+        return
 
 
 

@@ -5,8 +5,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class config(object):
-        MONGODB_URI = os.environ.get("MONGODB_URI", '')
-        OUOBACE_URI = os.environ.get("OUOBACE_URI", '')
         TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", '')
         TG_API_ID = os.environ.get("TG_API_ID", 12345)
         TG_API_HASH = os.environ.get("TG_API_HASH", '')
@@ -18,7 +16,6 @@ class config(object):
 plugins = dict(
         root="Bot_Client/plugins"
 )
-OUOBACE = config.OUOBACE_URI
 UploadCLI = pyrogram.Client(
         "bot",
         bot_token=config.TG_BOT_TOKEN,

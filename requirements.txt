@@ -1,6 +1,7 @@
 beautifulsoup4
 tgcrypto
 pyrogram
+youtube-dl
 requests
 python-dotenv
 seedir

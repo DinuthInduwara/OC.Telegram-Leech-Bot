@@ -1,4 +1,4 @@
-import re, os, time, asyncio
+import re, os, json, asyncio
 from Bot_Client import UploadCLI
 from hachoir.metadata import extractMetadata
 from hachoir.parser import createParser
@@ -9,7 +9,7 @@ from Bot_Client.plugins.upload_handlers.telegram_uploder import upload_tg, get_t
 from Bot_Client.plugins.upload_handlers.rclone_upload import rclone_Upload
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 import Bot_Client.plugins.video_processing.ffmpeg_handler as video_processing
-
+from Bot_Client.plugins.download_handlers.ytdl_handler import create_quality_menu, get_yt_link_details
 
 class main_worker:
     async def generate_directLinks(self, link, dtype):
@@ -22,25 +22,20 @@ class main_worker:
         downloadCLI.start()
         x = None
         while downloadCLI.is_alive():
-            print(downloadCLI.completed_size)
             await asyncio.sleep(4)
-            msg = await UploadCLI.get_messages(message.chat.id, message.id or message.message_id)
+            if 'id' in json.loads(str(message)):
+                msgid= message.id
+            else: msgid = message.message_id
+            msg = await UploadCLI.get_messages(message.chat.id, msgid)
             if msg.text == "Stopping download Progress":
                     downloadCLI.kill_thread()
                     os.remove(downloadCLI.file_name)
                     return None
             elif downloadCLI.bar != x:
                 x = downloadCLI.bar
-                print(downloadCLI.is_alive())
                 try: await msg.edit_text(downloadCLI.progress_bar, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Stop Task", callback_data="stop_download")]]))
                 except Exception as e:print(e)
         return downloadCLI.file_name
-        
-        
-
-
-
-        # return await download(url, message, filename)
 
     async def uploadTelegram(self, message, path):
         if path==None:
@@ -122,7 +117,31 @@ class main_worker:
     async def split_video(self, path, max_size=1900000000):
         return await video_processing.split_file(path, max_size)
         
-    async def ytdl_download(self, url, path):
-        pass
+    async def ytdl_download(self, url, path, format_id, message):
+        data, err = await get_yt_link_details(url)
+        if err:
+            return None, err
+        nurl = [i.get("url") for i in data.get("formats") if format_id == i.get("format_id")][0]
+        if nurl == None or nurl == ():
+            return None, err
+        try: 
+            return await self.download_file(message, nurl, path), None
+        except Exception as e: return None, e
+
         
+    async def create_ytdl_quality_menu(self, url, message, short_msg):
+        if 'id' in json.loads(str(message)): msgid= message.id
+        else: msgid = message.message_id
+        return await create_quality_menu(url, msgid, short_msg)
+
+    async def parse_details_from_message_text(self, text):
+        fname = fname = None
+        if len(text.split(" ")) > 1:
+            url = text.split(' ')[1]
+            if len(text.split('|')) > 1:
+                fname = text.split('|')[-1]
+            return  url, fname
+        else: return  None, None
+
+
 MAIN_WORKER = main_worker()

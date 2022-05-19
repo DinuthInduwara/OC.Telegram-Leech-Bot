@@ -6,11 +6,13 @@ from Bot_Client.plugins.main_worker.main_worker import MAIN_WORKER
 from Bot_Client.plugins.upload_handlers.multi_upload_handler import *
 from Bot_Client.plugins.pyrogram_handlers.command_handler import filemanager_cmd
 
+
+
 @UploadCLI.on_callback_query()
 async def answer(client, update):
-    # await update.answer(
-    #     f"Button contains: '{update.data}'",
-    #     show_alert=True)
+    await update.answer(
+        f"Button contains: '{update.data}'",
+        show_alert=True)
     if update.data == "stop_download":
         await update.message.edit("Stopping download Progress")
 
@@ -127,6 +129,17 @@ async def answer(client, update):
                     await update.message.edit(update.message.text+'\n\n'+x, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Back to Main Directory", callback_data='fmanager_back')]]))
             else: await update.message.edit(update.message.text+'\n\n `Path Is Empty`', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Back to Main Directory", callback_data='fmanager_back')]]))
 
+    elif update.data.startswith('ytdl_'):
+        await update.message.edit(f"Trying To Download `{update.message.text.strip('📁File Name: ')}`"+'\n\n🌷 𝒟𝑒𝓋𝑒𝓁𝑜𝓅𝑒𝓇 : ✍️✍️𝓞𝓹𝓮𝓷 𝓒𝓸𝓭𝓮 𝓓𝓮𝓿𝓼 ✍️✍️""')
+        data = update.data.split('_')
+        message_id, format_id = data[1], data[2]
+        x_ = await UploadCLI.get_messages(update.message.chat.id, int(message_id))
+        url, fname = await MAIN_WORKER.parse_details_from_message_text(x_.text)
+        if not fname: fname = update.message.text.strip("📁File Name: ")
+        print(url, fname)
+        path, err = await MAIN_WORKER.ytdl_download(url, fname, format_id, update.message)
+        if err: await update.message.edit(err)
+        elif path: await MAIN_WORKER.uploadTelegram(update.message, path)
 
 
 
@@ -134,4 +147,3 @@ async def answer(client, update):
 
 
 
-            
