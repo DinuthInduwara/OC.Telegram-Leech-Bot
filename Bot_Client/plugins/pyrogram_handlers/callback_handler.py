@@ -30,9 +30,7 @@ async def answer(client, update):
         url = await MAIN_WORKER.generate_directLinks(data[0].strip(), site)
         print(url)
         await update.answer(f"The file has started downloading..", show_alert=True)
-        path = await MAIN_WORKER.download_file(update.message, url, fname)
-        if path != None:
-            await MAIN_WORKER.uploadTelegram(update.message, path)
+        path = await MAIN_WORKER.download_file(update.message, url, fname, func=MAIN_WORKER.uploadTelegram, prms={"message": update.message})
         return
 
     elif 'rcloneupload' == update.data:
@@ -58,11 +56,8 @@ async def answer(client, update):
             url = await MAIN_WORKER.generate_directLinks(data[0].strip(), site)
             print(url)
             await update.answer(f"The file has started downloading..", show_alert=True)
-            path = await MAIN_WORKER.download_file(update.message, url, fname)
-            print(path)
-            if path != None:
-                config_paths = await MAIN_WORKER.parse_rclone_config(f"./Bot_Client/plugins/requirements/{update.message.chat.id}/rclone.conf")
-                await MAIN_WORKER.uploadRclone(update.message, path, config_paths[int(update.data.split('_')[1])])
+            config_paths = await MAIN_WORKER.parse_rclone_config(f"./Bot_Client/plugins/requirements/{update.message.chat.id}/rclone.conf")
+            path = await MAIN_WORKER.download_file(update.message, url, fname, func=MAIN_WORKER.uploadRclone, prms={"message":update.message,"dest_drive":config_paths[int(update.data.split('_')[1])] })
         return
     
     elif update.data in ['tmp.ninja', 'mixdrop', 'gofile', 'bayfiles', 'transfersh', 'anonfiles']:

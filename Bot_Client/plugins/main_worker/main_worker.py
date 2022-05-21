@@ -4,38 +4,25 @@ from hachoir.metadata import extractMetadata
 from hachoir.parser import createParser
 from Bot_Client.plugins.download_handlers.downloader import Filedownloade 
 from Bot_Client.plugins.download_handlers.direct_linkGeneratr import gen_link
-from Bot_Client.plugins.download_handlers.file_downloader import download
 from Bot_Client.plugins.upload_handlers.telegram_uploder import upload_tg, get_type
 from Bot_Client.plugins.upload_handlers.rclone_upload import rclone_Upload
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 import Bot_Client.plugins.video_processing.ffmpeg_handler as video_processing
-from Bot_Client.plugins.download_handlers.ytdl_handler import create_quality_menu, get_yt_link_details
+from Bot_Client.plugins.download_handlers.ytdl_handler import YTdl_Download_Handler, process_link
 
 class main_worker:
     async def generate_directLinks(self, link, dtype):
         return await gen_link(link, dtype)
 
-    async def download_file(self, message,  url,  filename=None):
+    async def download_file(self, message,  url,  filename=None, func=None, prms=None):
+        await message.edit('The file has started downloading⏬⏬', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(".o((⊙﹏⊙))o.", url="https://t.me/+qvJ4LlkWlSs1YTI1")]]))
         if filename:
             filename = os.path.join(f"downloads/{message.chat.id}/{filename}")
-        downloadCLI = Filedownloade(url,message, filename)
+
+        downloadCLI = Filedownloade(url,message, filename, func, prms)
         downloadCLI.start()
-        x = None
-        while downloadCLI.is_alive():
-            await asyncio.sleep(4)
-            if 'id' in json.loads(str(message)):
-                msgid= message.id
-            else: msgid = message.message_id
-            msg = await UploadCLI.get_messages(message.chat.id, msgid)
-            if msg.text == "Stopping download Progress":
-                    downloadCLI.kill_thread()
-                    os.remove(downloadCLI.file_name)
-                    return None
-            elif downloadCLI.bar != x:
-                x = downloadCLI.bar
-                try: await msg.edit_text(downloadCLI.progress_bar, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Stop Task", callback_data="stop_download")]]))
-                except Exception as e:print(e)
-        return downloadCLI.file_name
+        return True
+        
 
     async def uploadTelegram(self, message, path):
         if path==None:
@@ -117,22 +104,45 @@ class main_worker:
     async def split_video(self, path, max_size=1900000000):
         return await video_processing.split_file(path, max_size)
         
-    async def ytdl_download(self, url, path, format_id, message):
-        data, err = await get_yt_link_details(url)
-        if err:
-            return None, err
-        nurl = [i.get("url") for i in data.get("formats") if format_id == i.get("format_id")][0]
-        if nurl == None or nurl == ():
-            return None, err
-        try: 
-            return await self.download_file(message, nurl, path), None
-        except Exception as e: return None, e
+    async def ytdl_download(self, url, file_name, format_id, message):
+        obj = YTdl_Download_Handler(url, file_type=format_id, message=message)
+        obj.start()
+        obj.join()
+        print(obj.filename)
+        # data, err = await process_link(url)
 
-        
+        # if err: return None, err
+        # if data:
+        #     data, _ = data 
+
+        # nurl = ''
+        # for i in data:
+        #     if str(i.get("format_id").strip()) == str(format_id).strip():
+        #         nurl = i.get("url")
+        #         if i.get("format_note")=="tiny":
+        #             file_name += ".mp3"
+        #         break
+        # print("New Url is: " + nurl)
+        # if nurl == None or nurl == []:
+        #     return None, None
+        # try: 
+        #     return await self.download_file(message, nurl, file_name), None
+        # except Exception as e: return None, e
+
     async def create_ytdl_quality_menu(self, url, message, short_msg):
-        if 'id' in json.loads(str(message)): msgid= message.id
-        else: msgid = message.message_id
-        return await create_quality_menu(url, msgid, short_msg)
+        try:
+            if 'id' in json.loads(str(message)): msgid= message.id
+            else: msgid = message.message_id
+            out, err = await process_link(url)
+            if err: return None, err
+            m_list =  [InlineKeyboardButton(f"{i.get('filesize')} {i.get('displya_format').split('-')[1:][0]}", callback_data=f"{short_msg}_{msgid}_{i.get('format_id')}") for i in out]
+            
+            output = []
+            for i in range(0, len(m_list), 2): # Slicing Inline Keyboard Buttons
+                l = m_list[i: i+2]
+                output.append(l)
+            return output, None
+        except Exception as e: return None, e
 
     async def parse_details_from_message_text(self, text):
         fname = fname = None

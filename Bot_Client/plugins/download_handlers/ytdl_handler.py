@@ -1,9 +1,8 @@
+import os, time, asyncio
 from datetime import timedelta
-import asyncio
-import json
-import shlex
-from pyrogram.types import InlineKeyboardButton
-from typing import Dict, List, Optional, Tuple, Union
+from youtube_dl import YoutubeDL
+from Bot_Client.plugins.constents.progress_for_pyrogram import progress_for_pyrogram
+from threading import Thread
 
 def human_readable_bytes(value, digits=2, delim="", postfix=""):
     """Return a human-readable file size."""
@@ -48,95 +47,86 @@ def human_readable_timedelta(seconds, precision=0):
     return "".join(pieces[:precision])
 
 
+async def process_link(link):
+    output = []
+    try:    
+        with YoutubeDL() as ydl:
+            result = ydl.extract_info(link, download=False)
+            # name = ydl.prepare_filename(result)
+            for i in result.get("formats"):
+                format_id = i.get("format_id")
+                displya_format = i.get("format")
+                filesize = i.get("filesize")
+                format_note = i.get("format_note") 
+                url = i.get("url")
+                output.append({
+                    "format_id": format_id,
+                    "displya_format": displya_format,
+                    "filesize":human_readable_bytes(filesize),
+                    "url": url,
+                    "format_note":format_note
+                })
+        return output, None
 
-async def cli_call(cmd: Union[str, List[str]]) -> Tuple[str, str]:
-    if isinstance(cmd, str):
-        cmd = shlex.split(cmd)
-    elif isinstance(cmd, (list, tuple)):
-        pass
-    else:
-        return None, None
-
-    process = await asyncio.create_subprocess_exec(
-        *cmd, stderr=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
-    )
-
-    stdout, stderr = await process.communicate()
-
-    stdout = stdout.decode().strip()
-    stderr = stderr.decode().strip()
-
-    with open("test.txt", "w", encoding="UTF-8") as f:
-        f.write(stdout)
-
-    return stdout, stderr
-
-
-async def get_yt_link_details(url: str) -> Union[Dict[str, str], None]:
-    cmd = "youtube-dl --no-warnings --youtube-skip-dash-manifest --dump-json"
-    cmd = shlex.split(cmd)
-    if "hotstar" in url:
-        cmd.append("--geo-bypass-country")
-        cmd.append("IN")
-    cmd.append(url)
-
-    out, error = await cli_call(cmd)
-    if error:
-        print(f"Error occured:- {error} for url {url}")
-    # sanitize the json
-    out = out.replace("\n", ",")
-    out = "[" + out + "]"
-    try:
-        return json.loads(out)[0], None
-    except:
-        print("Error occured while parsing the json.\n")
-        return None, error
+    except Exception as e: return None , e
 
 
-async def create_quality_menu(
-    url: str,
-    message_id,
-    short_msg,
-    jsons: Optional[str] = None,
 
-):
-    if jsons is None:
-        data, err = await get_yt_link_details(url)
-    else:
-        data = jsons
+class YTdl_Download_Handler(Thread):
+    def __init__(self, url, format_type, message,  download_folder="./downloads/"):
+        super(YTdl_Download_Handler, self).__init__()
+        self.format_type = format_type
+        self.url = url
+        self.download_folder = download_folder
 
-
-    if data is None:
-        return None, err
-    else:
-        if "_filename" in data:
-            file_name = data["_filename"]
-        else:file_name = "untitled.mp4"
-
-        unique_formats = dict()
-        for i in data.get("formats"):
-            colity_format = i.get("format_note")
-            file_size = i.get("filesize")
-            d_format = i.get("format_id")
-            url = i.get("url")
-            if colity_format is None:
-                colity_format = i.get("height")
-            unique_formats[colity_format] = {"size": file_size, "url": url, "d_format": d_format}
-
-        buttons = list()
-        for i in unique_formats.keys():
-            if i == "tiny":
-                text = f"tiny [{human_readable_bytes(unique_formats[i]['size'])}] ➡️"
-                callback_data = f'{short_msg}_{message_id}_{unique_formats[i]["d_format"]}'
-                buttons.append([InlineKeyboardButton(text, callback_data=callback_data)])
-            else:
-                text = f"{i} - [{human_readable_bytes(unique_formats[i]['size'])}] ➡️"
-                callback_data = f'{short_msg}_{message_id}_{unique_formats[i]["d_format"]}'
-                buttons.append([InlineKeyboardButton(text, callback_data=callback_data)])
+        self.status = ""
+        self.downloaded_bytes = 0
+        self.total_bytes = 0
+        self.filename = ''
+        self.eta = 0
+        self.speed = 0
+        self.presentage = "0%"
+        self.started_time = None
+        self.message= message
 
 
-    return (buttons, file_name), None
+    def run(self):
+        self.started_time = time.time()
+        return self._download(self.url)
+
+    def _download(self, url):
+        if not os.path.isdir(self.download_folder): # check if the folder avaibale
+            os.makedirs(self.download_folder) 
+
+        os.chdir(self.download_folder) # Change working directory to the download folder
+
+        with YoutubeDL({"format": self.format_type,"progress_hooks":[self._progress_generater]}) as ydl:
+            ydl.download([url])
+        return self.filename
 
 
 
 
+    def _progress_generater(self, dic):
+        if dic.get("status") == "downloading":
+            self.status = dic.get("status")
+            self.downloaded_bytes = int(dic.get("downloaded_bytes"))
+            self.total_bytes = int(dic.get("total_bytes"))
+            self.filename = f"./{self.download_folder}/{dic.get('filename')}"
+            self.eta = dic.get("_eta_str")
+            self.speed = dic.get("_speed_str")
+            self.presentage = dic.get("_percent_str")
+            asyncio.run(progress_for_pyrogram(self.downloaded_bytes, self.total_bytes, "YTDL Video Downloading...",self.message, self.started_time ))
+
+        
+        elif dic.get("status") == "finished":
+            self.status = dic.get("status")
+
+
+    def stop_download(self):
+        raise ValueError("Download Stopping..")
+
+ 
+
+    def write(self, msg):
+        print(msg)

@@ -1,41 +1,53 @@
 import requests
 import os
 import mimetypes
-import math
-import sys
+import asyncio
 import time
 from threading import Thread
-
+from Bot_Client.plugins.constents.progress_for_pyrogram import progress_for_pyrogram
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 class Filedownloade(Thread):
-    def __init__(self, url, message=None, file_name=None,):
+    def __init__(self, url, message=None, file_name=None, func=None, prms=None):
         super(Filedownloade, self).__init__()
+        self.func = func
+        self.params = prms
+        
+
         self.url = url
+        self.extension = None
         self.message = message
-        self.Ifstopped = False
-        self.downloading_speed = 0
-        self.progress_bar = None
-        self.elapsed_time = 0
         self.file_name = file_name
         self.session = requests.Session()
         self.file_size = 0
         self.file_Mimetype = None
-        self.started_time = time.time()
+        self.started_time = 0
         self.completed_size = 0
         self.presentage = 0
-        self.bar = "[]"
+
         self.estimated_total_time = 0
 
     def kill_thread(self):
-        self.Ifstopped = True
+        raise ValueError("Download thread is terminating")
 
     def run(self):
-        return self._worker_download(self.url, self.file_name)
+        path = asyncio.run(self._worker_download(self.url, self.file_name))
+        if not self.func:
+            return path
+        asyncio.run(self._before_worker(path))
+    
+    async def _before_worker(self, path):
+        self.params["path"] = path
+        await self.func(**self.params)
+
+
 
     
-    def _worker_download(self, url, filename=None):
+    async def _worker_download(self, url, filename=None):
         res = self.session.get(url, stream=True, allow_redirects=True)
+        self.started_time = time.time()
         self.file_Mimetype = res.headers.get('content-type')
         self.file_size = int(res.headers.get('content-length'))
+        self.extension = mimetypes.guess_extension(self.file_Mimetype)
         if not self.file_name:self.file_name = self.gen_fileDownloadPath(url)
         
 
@@ -52,14 +64,10 @@ class Filedownloade(Thread):
                 f.write(res.content)
             else:
                 for data in res.iter_content(chunk_size=max(int(self.file_size/1000), 1024*1024)):
-                    if self.Ifstopped:
-                        print("Download Progress Stopped......")
-                        raise ValueError("Stopping download")
-                        
                     self.completed_size += len(data)
                     f.write(data)
-                    self.bar_generator()
-                    self.progress_bar_gen()
+                    await progress_for_pyrogram(self.completed_size, self.file_size, f"{self.file_name} is downloading", self.message, self.started_time, InlineKeyboardMarkup([[InlineKeyboardButton("Stop Task", callback_data=f"stop_{self.name}")]]))
+          
             return filename
 
                 
@@ -71,35 +79,12 @@ class Filedownloade(Thread):
             filename = url.split("/")[-2].replace('%', ' ').strip()
         if '.' in filename:
             if "?" or '=' in filename.split(".")[-1] and self.file_Mimetype != None:
-                filename = filename+mimetypes.guess_extension(self.file_Mimetype)
+                filename = filename+self.extension
         if '.' not in filename and self.file_Mimetype != None:
-            filename = filename+mimetypes.guess_extension(self.file_Mimetype)
+            filename = filename+self.extension
         return os.path.join(f"downloads/{self.message.chat.id}/{filename}")
 
-    def bar_generator(self):
-        now = time.time()
-        diff = now - self.started_time
-        if round(diff % 10.00) == 0 or self.completed_size == self.file_size:
-            self.presentage = self.completed_size * 100 / self.file_size
-            self.downloading_speed = self.completed_size / diff
-            elapsed_time = round(diff) * 1000
-            time_to_completion = round((self.file_size - self.completed_size) / self.downloading_speed) * 1000
-            self.estimated_total_time = elapsed_time + time_to_completion
-            self.elapsed_time = self.TimeFormatter(elapsed_time)
-            self.estimated_total_time = self.TimeFormatter(self.estimated_total_time)
-            self.bar = "[{0}{1}] \nP: {2}%\n".format(
-                ''.join(["█" for i in range(math.floor(self.presentage / 5))]),
-                ''.join(["░" for i in range(20 - math.floor(self.presentage / 5))]),
-                round(self.presentage, 2))
-
-    def progress_bar_gen(self):
-        self.progress_bar = self.bar + "{0} of {1}\nSpeed: {2}/s\nETA: {3}\n".format(
-            self.humanbytes(self.completed_size),
-            self.humanbytes(self.file_size),
-            self.humanbytes(self.downloading_speed),
-            # elapsed_time if elapsed_time != '' else "0 s",
-            self.estimated_total_time if self.estimated_total_time != '' else "0 s"
-        )
+    
     
 
 

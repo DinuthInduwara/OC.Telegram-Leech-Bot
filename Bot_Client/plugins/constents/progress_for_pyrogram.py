@@ -84,7 +84,8 @@ async def progress_for_pyrogram(
     total,
     ud_type,
     message,
-    start
+    start,
+    reply_markup=None
 ):
     now = time.time()
     diff = now - start
@@ -116,7 +117,8 @@ async def progress_for_pyrogram(
                 text="{}\n {}".format(
                     ud_type,
                     tmp
-                )
+                ),
+                reply_markup=reply_markup
             )
         except:
             pass
