@@ -72,12 +72,15 @@ class main_worker:
                 os.remove(path)
 
     async def uploadRclone(self, message, path , dest_drive):
-        await rclone_Upload(path, message, dest_drive)
+        url = await rclone_Upload(path, message, dest_drive)
+        await message.edit(f"Public URL: {url}\n\n🌷 𝒟𝑒𝓋𝑒𝓁𝑜𝓅𝑒𝓇 : ✍️✍️𝓞𝓹𝓮𝓷 𝓒𝓸𝓭𝓮 𝓓𝓮𝓿𝓼 ✍️✍️", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('URL', url=stdout)]]))
         try:await self.generate_screen_shots_and_send(message, path)
         except:pass
         finally: 
-            if path:
-                os.remove(path)
+            try:
+                if path:
+                    os.remove(path)
+            except FileNotFoundError: pass
     
     async def parse_rclone_config(self, path):
         with open(path, 'r') as f:

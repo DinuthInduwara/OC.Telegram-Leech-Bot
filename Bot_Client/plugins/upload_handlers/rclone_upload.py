@@ -25,6 +25,7 @@ async def rclone_Upload(path, message, dest_drive):
 
     rclone_pr = subprocess.Popen(rclone_copy_cmd, stdout=subprocess.PIPE)
     rcres = await rclone_process_display(rclone_pr, message, path, folder, CONF_PATH)
+    return rcres
 
     
 
@@ -90,7 +91,7 @@ async def rclone_process_display(process, message, path, destfolder, confif_path
         process = await asyncio.create_subprocess_shell(rclone_json, stdout=asyncio.subprocess.PIPE)
         stdout, _ = await process.communicate()
         stdout = stdout.decode().strip()
-        await message.edit(f"Public URL: {stdout}\n\n🌷 𝒟𝑒𝓋𝑒𝓁𝑜𝓅𝑒𝓇 : ✍️✍️𝓞𝓹𝓮𝓷 𝓒𝓸𝓭𝓮 𝓓𝓮𝓿𝓼 ✍️✍️", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('URL', url=stdout)]]))
+        return stdout
         # data = json.loads(stdout)
         # id = data[0]["ID"]
         # name = data[0]["Name"]
