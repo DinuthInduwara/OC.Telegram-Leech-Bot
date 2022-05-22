@@ -73,7 +73,7 @@ class main_worker:
 
     async def uploadRclone(self, message, path , dest_drive):
         url = await rclone_Upload(path, message, dest_drive)
-        await message.edit(f"Public URL: {url}\n\n🌷 𝒟𝑒𝓋𝑒𝓁𝑜𝓅𝑒𝓇 : ✍️✍️𝓞𝓹𝓮𝓷 𝓒𝓸𝓭𝓮 𝓓𝓮𝓿𝓼 ✍️✍️", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('URL', url=stdout)]]))
+        await message.edit(f"Public URL: {url}\n\n🌷 𝒟𝑒𝓋𝑒𝓁𝑜𝓅𝑒𝓇 : ✍️✍️𝓞𝓹𝓮𝓷 𝓒𝓸𝓭𝓮 𝓓𝓮𝓿𝓼 ✍️✍️", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('URL', url=url)]]))
         try:await self.generate_screen_shots_and_send(message, path)
         except:pass
         finally: 
@@ -107,30 +107,10 @@ class main_worker:
     async def split_video(self, path, max_size=1900000000):
         return await video_processing.split_file(path, max_size)
         
-    async def ytdl_download(self, url, file_name, format_id, message):
-        obj = YTdl_Download_Handler(url, file_type=format_id, message=message)
+    async def ytdl_download(self, url, format_id, message, func, args):
+        obj = YTdl_Download_Handler(url, file_type=format_id, message=message, func=func, args=args)
         obj.start()
-        obj.join()
-        print(obj.filename)
-        # data, err = await process_link(url)
 
-        # if err: return None, err
-        # if data:
-        #     data, _ = data 
-
-        # nurl = ''
-        # for i in data:
-        #     if str(i.get("format_id").strip()) == str(format_id).strip():
-        #         nurl = i.get("url")
-        #         if i.get("format_note")=="tiny":
-        #             file_name += ".mp3"
-        #         break
-        # print("New Url is: " + nurl)
-        # if nurl == None or nurl == []:
-        #     return None, None
-        # try: 
-        #     return await self.download_file(message, nurl, file_name), None
-        # except Exception as e: return None, e
 
     async def create_ytdl_quality_menu(self, url, message, short_msg):
         try:

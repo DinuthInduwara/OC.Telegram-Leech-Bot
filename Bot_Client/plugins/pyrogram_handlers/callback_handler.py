@@ -132,10 +132,8 @@ async def answer(client, update):
         url, fname = await MAIN_WORKER.parse_details_from_message_text(x_.text)
         if not fname: fname = update.message.text.strip("📁File Name: ")
         print(url, fname)
-        path, err = await MAIN_WORKER.ytdl_download(url, fname, format_id, update.message)
-        if err: await update.message.edit(err)
-        elif path: await MAIN_WORKER.uploadTelegram(update.message, path)
-
+        await MAIN_WORKER.ytdl_download(url, format_id, update.message, MAIN_WORKER.uploadTelegram, {"message":update.message} )
+     
 
 
 

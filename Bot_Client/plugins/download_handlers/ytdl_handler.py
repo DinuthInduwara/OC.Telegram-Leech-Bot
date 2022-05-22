@@ -1,3 +1,4 @@
+from ast import arg
 import os, time, asyncio
 from datetime import timedelta
 from youtube_dl import YoutubeDL
@@ -73,51 +74,64 @@ async def process_link(link):
 
 
 class YTdl_Download_Handler(Thread):
-    def __init__(self, url, format_type, message,  download_folder="./downloads/"):
+    def __init__(self, url, format_type, message,  download_folder="./downloads/", func=None, args=None):
         super(YTdl_Download_Handler, self).__init__()
         self.format_type = format_type
+        self.func = func
+        self.args = args
         self.url = url
         self.download_folder = download_folder
+        self.message= message
+
 
         self.status = ""
         self.downloaded_bytes = 0
         self.total_bytes = 0
         self.filename = ''
-        self.eta = 0
-        self.speed = 0
-        self.presentage = "0%"
+        # self.eta = 0
+        # self.speed = 0
+        # self.presentage = "0%"
         self.started_time = None
-        self.message= message
 
 
     def run(self):
         self.started_time = time.time()
-        return self._download(self.url)
+        x = asyncio.run(self._download(self.url))
+        if self.func is not None:
+            return x
+        else: asyncio.run(self._before_worker(x))
 
-    def _download(self, url):
+    async def _before_worker(self, path):
+        self.params["path"] = path
+        await self.func(**self.params)
+
+
+    async def _download(self, url):
         if not os.path.isdir(self.download_folder): # check if the folder avaibale
             os.makedirs(self.download_folder) 
 
         os.chdir(self.download_folder) # Change working directory to the download folder
 
-        with YoutubeDL({"format": self.format_type,"progress_hooks":[self._progress_generater]}) as ydl:
+        with YoutubeDL({"format": self.format_type,"progress_hooks":[await self._progress_generater]}) as ydl:
             ydl.download([url])
         return self.filename
 
 
 
 
-    def _progress_generater(self, dic):
+    async def _progress_generater(self, dic):
         if dic.get("status") == "downloading":
             self.status = dic.get("status")
             self.downloaded_bytes = int(dic.get("downloaded_bytes"))
             self.total_bytes = int(dic.get("total_bytes"))
             self.filename = f"./{self.download_folder}/{dic.get('filename')}"
-            self.eta = dic.get("_eta_str")
-            self.speed = dic.get("_speed_str")
-            self.presentage = dic.get("_percent_str")
-            asyncio.run(progress_for_pyrogram(self.downloaded_bytes, self.total_bytes, "YTDL Video Downloading...",self.message, self.started_time ))
 
+            await progress_for_pyrogram(self.downloaded_bytes, self.total_bytes, f"Status: {self.status}")
+
+            # self.eta = dic.get("_eta_str")
+            # self.speed = dic.get("_speed_str")
+            # self.presentage = dic.get("_percent_str")
+  
         
         elif dic.get("status") == "finished":
             self.status = dic.get("status")
