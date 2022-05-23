@@ -1,4 +1,3 @@
-from ast import arg
 import os, time, asyncio
 from datetime import timedelta
 from youtube_dl import YoutubeDL
@@ -88,39 +87,32 @@ class YTdl_Download_Handler(Thread):
         self.downloaded_bytes = 0
         self.total_bytes = 0
         self.filename = None
-        # self.eta = 0
-        # self.speed = 0
+        self.eta = 0
+        self.speed = 0
         # self.presentage = "0%"
-        self.loop = None
         self.started_time = None
 
 
     def run(self):
         self.started_time = time.time()
-
-        x = asyncio.run(self.manage_workflow())
+        print(self.message)
+        self.setName(f"{self.message.chat.id}_{self.message.reply_to_message_id}")
+        asyncio.run(self.manage_workflow())
     
     async def manage_workflow(self):
-        self.loop = asyncio.get_event_loop()
         original_path = os.getcwd()
-        filename = await self._download(self.url)
+        filename = self._download(self.url)
 
 
         if self.func is None:
             return os.path.join(self.download_folder, filename)
         
-        else: await self._after_worker(filename)
-
-    async def _after_worker(self, path):
-        self.args["path"] = path
+   
+        self.args["path"] = filename
         await self.func(**self.args)
-        self.loop.close()
 
 
-    async def _download(self, url):
-        self.loop = asyncio.get_event_loop()
-
-
+    def _download(self, url):
         if not os.path.isdir(self.download_folder): # check if the folder avaibale
             os.makedirs(self.download_folder) 
 
@@ -140,10 +132,10 @@ class YTdl_Download_Handler(Thread):
             self.total_bytes = int(dic.get("total_bytes"))
             self.filename = dic.get('filename')
 
-            if self.loop: self.loop.run_until_complete(progress_for_pyrogram(self.downloaded_bytes, self.total_bytes, f"Status: {self.status}", self.message, self.started_time))
+            # if self.loop: self.loop.run_until_complete(progress_for_pyrogram(self.downloaded_bytes, self.total_bytes, f"Status: {self.status}", self.message, self.started_time))
 
-            # self.eta = dic.get("_eta_str")
-            # self.speed = dic.get("_speed_str")
+            self.eta = dic.get("_eta_str")
+            self.speed = dic.get("_speed_str")
             # self.presentage = dic.get("_percent_str")
   
         

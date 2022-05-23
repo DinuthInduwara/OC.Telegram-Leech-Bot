@@ -1,7 +1,7 @@
-import os, time
+import os, time, math, threading
 import seedir as sd
-from Bot_Client.plugins.constents.progress_for_pyrogram import progress_for_pyrogram
 from Bot_Client import UploadCLI, config
+from Bot_Client.plugins.constents.progress_for_pyrogram import progress_for_pyrogram, humanbytes
 from Bot_Client.plugins.main_worker.main_worker import MAIN_WORKER
 from Bot_Client.plugins.upload_handlers.multi_upload_handler import *
 from Bot_Client.plugins.pyrogram_handlers.command_handler import filemanager_cmd
@@ -134,7 +134,23 @@ async def answer(client, update):
         print(url, fname)
         await MAIN_WORKER.ytdl_download(url, format_id, update.message, MAIN_WORKER.uploadTelegram, {"message":update.message} )
      
-
+    elif update.data == "progress_me":
+        threads = threading.enumerate()
+        for i in threads:
+            if i.name == f"{update.message.chat.id}_{update.message.reply_to_message_id}":
+                percentage = i.downloaded_bytes * 100 / i.total_bytes
+                progress = "[{0}{1}] \nP: {2}%\n".format(
+                    ''.join(["▰" for i in range(math.floor(percentage / 5))]),
+                    ''.join(["▱" for i in range(20 - math.floor(percentage / 5))]),
+                    round(percentage, 2))
+                tmp = progress + "{0} of {1}\nSpeed: {2}/s\nETA: {3}\n".format(
+                    humanbytes(i.downloaded_bytes),
+                    humanbytes(i.total_bytes),
+                    humanbytes(i.speed),
+                    # elapsed_time if elapsed_time != '' else "0 s",
+                    i.eta if i.eta != '' else "0 s"
+                )
+                await update.answer(tmp,show_alert=True)
 
 
 
