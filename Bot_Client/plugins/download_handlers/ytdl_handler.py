@@ -87,46 +87,54 @@ class YTdl_Download_Handler(Thread):
         self.status = ""
         self.downloaded_bytes = 0
         self.total_bytes = 0
-        self.filename = ''
+        self.filename = None
         # self.eta = 0
         # self.speed = 0
         # self.presentage = "0%"
+        self.loop = None
         self.started_time = None
 
 
     def run(self):
         self.started_time = time.time()
-        x = asyncio.run(self._download(self.url))
-        if self.func is not None:
-            return x
-        else: asyncio.run(self._before_worker(x))
+        try:
+            x = asyncio.run(self._download(self.url))
+            if self.func is None:
+                return x
+            else: asyncio.run(self._before_worker(x))
+        except Exception as e: print(e)
 
     async def _before_worker(self, path):
-        self.params["path"] = path
-        await self.func(**self.params)
+        self.args["path"] = path
+        await self.func(**self.args)
+        self.loop.close()
 
 
     async def _download(self, url):
+        self.loop = asyncio.new_event_loop()
+
+
         if not os.path.isdir(self.download_folder): # check if the folder avaibale
             os.makedirs(self.download_folder) 
 
         os.chdir(self.download_folder) # Change working directory to the download folder
 
-        with YoutubeDL({"format": self.format_type,"progress_hooks":[await self._progress_generater]}) as ydl:
+        with YoutubeDL({"format": self.format_type,"progress_hooks":[self._progress_generater]}) as ydl:
             ydl.download([url])
         return self.filename
 
 
 
 
-    async def _progress_generater(self, dic):
+    def _progress_generater(self, dic):
         if dic.get("status") == "downloading":
             self.status = dic.get("status")
             self.downloaded_bytes = int(dic.get("downloaded_bytes"))
             self.total_bytes = int(dic.get("total_bytes"))
-            self.filename = f"./{self.download_folder}/{dic.get('filename')}"
+            self.filename = dic.get('filename')
 
-            await progress_for_pyrogram(self.downloaded_bytes, self.total_bytes, f"Status: {self.status}")
+            
+            self.loop.run_until_complete(progress_for_pyrogram(self.downloaded_bytes, self.total_bytes, f"Status: {self.status}", self.message, self.started_time))
 
             # self.eta = dic.get("_eta_str")
             # self.speed = dic.get("_speed_str")
@@ -135,12 +143,10 @@ class YTdl_Download_Handler(Thread):
         
         elif dic.get("status") == "finished":
             self.status = dic.get("status")
+            self.filename = dic.get('filename')
 
 
     def stop_download(self):
         raise ValueError("Download Stopping..")
 
  
-
-    def write(self, msg):
-        print(msg)

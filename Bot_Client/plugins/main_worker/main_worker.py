@@ -108,7 +108,7 @@ class main_worker:
         return await video_processing.split_file(path, max_size)
         
     async def ytdl_download(self, url, format_id, message, func, args):
-        obj = YTdl_Download_Handler(url, file_type=format_id, message=message, func=func, args=args)
+        obj = YTdl_Download_Handler(url, format_type=format_id, message=message, func=func, args=args)
         obj.start()
 
 

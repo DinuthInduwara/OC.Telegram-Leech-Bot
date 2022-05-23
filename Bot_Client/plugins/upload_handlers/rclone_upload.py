@@ -1,7 +1,6 @@
 import subprocess, re, time, asyncio
 from datetime import date
 from pyrogram.errors import FloodWait
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from Bot_Client.plugins.constents.progress_for_pyrogram import progress_for_pyrogram
 
 async def rclone_Upload(path, message, dest_drive):
@@ -87,11 +86,10 @@ async def rclone_process_display(process, message, path, destfolder, confif_path
 
     try:
         # rclone_json = f"rclone lsjson --config={confif_path} \"{destfolder}/{path.split('/')[-1]}\""
-        rclone_json = f"rclone link --config={confif_path} \"{destfolder}/{path.split('/')[-1]}\""
-        process = await asyncio.create_subprocess_shell(rclone_json, stdout=asyncio.subprocess.PIPE)
-        stdout, _ = await process.communicate()
-        stdout = stdout.decode().strip()
-        return stdout
+        rclone_json = ["rclone", "link", f"--config={confif_path}", f"{destfolder}/{path.split('/')[-1]}"]
+        process = subprocess.Popen(rclone_json, stdout=subprocess.PIPE)
+        data = process.stdout.read().decode().strip()
+        return data
         # data = json.loads(stdout)
         # id = data[0]["ID"]
         # name = data[0]["Name"]
