@@ -98,7 +98,7 @@ class YTdl_Download_Handler(Thread):
     def run(self):
         self.started_time = time.time()
 
-        x = asyncio.runt(self.manage_workflow())
+        x = asyncio.run(self.manage_workflow())
     
     async def manage_workflow(self):
         self.loop = asyncio.get_event_loop()
