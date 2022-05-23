@@ -106,7 +106,7 @@ async def ytdl_cmd(client, message):
     print(url, fname)
     if url:
         qualitys, errors = await MAIN_WORKER.create_ytdl_quality_menu(url, message, short_msg="ytdl")
-        if errors: await msg.edit(f"Cant Process url becouse:{errors}")
+        if errors: await msg.edit(f"Cant Process url becouse: `{errors}`")
         else: await msg.edit(f"Selece quality", reply_markup=InlineKeyboardMarkup(qualitys))
         return
 

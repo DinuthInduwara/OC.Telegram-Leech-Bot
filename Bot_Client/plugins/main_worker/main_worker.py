@@ -11,10 +11,10 @@ import Bot_Client.plugins.video_processing.ffmpeg_handler as video_processing
 from Bot_Client.plugins.download_handlers.ytdl_handler import YTdl_Download_Handler, process_link
 
 class main_worker:
-    async def generate_directLinks(self, link, dtype):
+    async def generate_directLinks(self, link: str, dtype: str):
         return await gen_link(link, dtype)
 
-    async def download_file(self, message,  url,  filename=None, func=None, prms=None):
+    async def download_file(self, message: any,  url:str,  filename=None, func=None, prms:dict=None):
         await message.edit('The file has started downloading⏬⏬', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(".o((⊙﹏⊙))o.", url="https://t.me/+qvJ4LlkWlSs1YTI1")]]))
         if filename:
             filename = os.path.join(f"downloads/{message.chat.id}/{filename}")
@@ -108,15 +108,22 @@ class main_worker:
         return await video_processing.split_file(path, max_size)
         
     async def ytdl_download(self, url, format_id, message, func, args):
-        obj = YTdl_Download_Handler(url, format_type=format_id, message=message, func=func, args=args)
-        obj.start()
+        # obj = YTdl_Download_Handler(url, format_type=format_id, message=message, func=func, args=args)
+        # obj.start()
+        out, name , err = await process_link(url)
+        if err: await message.edit(f"Cant Process Link: {err}")
+        link = None
+        for i in out:
+            if i.get("format_id") == format_id: link = i.get("url")
+        if link: return self.download_file(message, url, name, self.uploadTelegram, {"message":message})
+        else: await message.edit(f"Something went wrong with the link. Please try again later or recheck the link your link.")
 
 
     async def create_ytdl_quality_menu(self, url, message, short_msg):
         try:
             if 'id' in json.loads(str(message)): msgid= message.id
             else: msgid = message.message_id
-            out, err = await process_link(url)
+            out, _ , err = await process_link(url)
             if err: return None, err
             m_list =  [InlineKeyboardButton(f"{i.get('filesize')} {i.get('displya_format').split('-')[1:][0]}", callback_data=f"{short_msg}_{msgid}_{i.get('format_id')}") for i in out]
             

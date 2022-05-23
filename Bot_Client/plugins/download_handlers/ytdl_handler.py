@@ -53,7 +53,7 @@ async def process_link(link):
     try:    
         with YoutubeDL() as ydl:
             result = ydl.extract_info(link, download=False)
-            # name = ydl.prepare_filename(result)
+            name = ydl.prepare_filename(result)
             for i in result.get("formats"):
                 format_id = i.get("format_id")
                 displya_format = i.get("format")
@@ -67,9 +67,9 @@ async def process_link(link):
                     "url": url,
                     "format_note":format_note
                 })
-        return output, None
+        return output, name,  None
 
-    except Exception as e: return None , e
+    except Exception as e: return None, None , e
 
 
 
@@ -111,7 +111,7 @@ class YTdl_Download_Handler(Thread):
 
 
     async def _download(self, url):
-        self.loop = asyncio.new_event_loop()
+        self.loop = asyncio.get_event_loop()
 
 
         if not os.path.isdir(self.download_folder): # check if the folder avaibale
