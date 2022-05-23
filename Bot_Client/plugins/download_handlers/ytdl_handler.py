@@ -97,14 +97,21 @@ class YTdl_Download_Handler(Thread):
 
     def run(self):
         self.started_time = time.time()
-        try:
-            x = asyncio.run(self._download(self.url))
-            if self.func is None:
-                return x
-            else: asyncio.run(self._before_worker(x))
-        except Exception as e: print(e)
 
-    async def _before_worker(self, path):
+        x = asyncio.runt(self.manage_workflow())
+    
+    async def manage_workflow(self):
+        self.loop = asyncio.get_event_loop()
+        original_path = os.getcwd()
+        filename = await self._download(self.url)
+
+
+        if self.func is None:
+            return os.path.join(self.download_folder, filename)
+        
+        else: await self._after_worker(filename)
+
+    async def _after_worker(self, path):
         self.args["path"] = path
         await self.func(**self.args)
         self.loop.close()
@@ -133,8 +140,7 @@ class YTdl_Download_Handler(Thread):
             self.total_bytes = int(dic.get("total_bytes"))
             self.filename = dic.get('filename')
 
-            
-            self.loop.run_until_complete(progress_for_pyrogram(self.downloaded_bytes, self.total_bytes, f"Status: {self.status}", self.message, self.started_time))
+            if self.loop: self.loop.run_until_complete(progress_for_pyrogram(self.downloaded_bytes, self.total_bytes, f"Status: {self.status}", self.message, self.started_time))
 
             # self.eta = dic.get("_eta_str")
             # self.speed = dic.get("_speed_str")

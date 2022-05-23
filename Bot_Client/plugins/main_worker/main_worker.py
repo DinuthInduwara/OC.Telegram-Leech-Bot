@@ -115,7 +115,7 @@ class main_worker:
         link = None
         for i in out:
             if i.get("format_id") == format_id: link = i.get("url")
-        if link: return self.download_file(message, url, name, self.uploadTelegram, {"message":message})
+        if link: return await self.download_file(message, url, name, func=self.uploadTelegram, prms={"message":message})
         else: await message.edit(f"Something went wrong with the link. Please try again later or recheck the link your link.")
 
 
