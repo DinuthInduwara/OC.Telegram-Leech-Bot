@@ -137,21 +137,22 @@ async def answer(client, update):
     elif update.data == "progress_me":
         threads = threading.enumerate()
         for i in threads:
-            if i.name == f"{update.message.chat.id}_{update.message.reply_to_message_id}":
-                percentage = i.downloaded_bytes * 100 / i.total_bytes
-                progress = "[{0}{1}] \nP: {2}%\n".format(
-                    ''.join(["▰" for i in range(math.floor(percentage / 5))]),
-                    ''.join(["▱" for i in range(20 - math.floor(percentage / 5))]),
-                    round(percentage, 2))
-                tmp = progress + "{0} of {1}\nSpeed: {2}/s\nETA: {3}\n".format(
-                    humanbytes(i.downloaded_bytes),
-                    humanbytes(i.total_bytes),
-                    humanbytes(i.speed),
-                    # elapsed_time if elapsed_time != '' else "0 s",
-                    i.eta if i.eta != '' else "0 s"
-                )
-                await update.answer(tmp,show_alert=True)
-
+            try:
+                if i.name == f"{update.message.chat.id}_{update.message.reply_to_message_id}":
+                    percentage = i.downloaded_bytes * 100 / i.total_bytes
+                    progress = "[{0}{1}] \nP: {2}%\n".format(
+                        ''.join(["▰" for i in range(math.floor(percentage / 5))]),
+                        ''.join(["▱" for i in range(20 - math.floor(percentage / 5))]),
+                        round(percentage, 2))
+                    tmp = progress + "{0} of {1}\nSpeed: {2}/s\nETA: {3}\n".format(
+                        humanbytes(i.downloaded_bytes),
+                        humanbytes(i.total_bytes),
+                        humanbytes(i.speed),
+                        # elapsed_time if elapsed_time != '' else "0 s",
+                        i.eta if i.eta != '' else "0 s"
+                    )
+                    await update.answer(tmp,show_alert=True)
+            except Exception as e:print(e)
 
 
 
